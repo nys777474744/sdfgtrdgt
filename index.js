@@ -6,6 +6,7 @@ const { registerCommands } = require('./handlers/command-handler');
 const { initializeDataManager } = require('./utils/data-manager');
 const { setupCronJobs } = require('./utils/cron-jobs');
 const { setupPresenceRotation } = require('./utils/presence');
+const { DataAPIServer } = require('./api/server');
 const config = require('./config');
 const { initializeTicketFeatures } = require('./utils/ticket-features');
 
@@ -41,6 +42,13 @@ async function initialize() {
     client.dataManager = dataManager;
     client.ticketFeatures = ticketFeatures;
 
+    // Start API server for data sharing
+    const apiServer = new DataAPIServer(logger);
+    apiServer.start();
+    
+    // Store API server reference for graceful shutdown
+    client.apiServer = apiServer;
+
     // Register command handlers
     await registerCommands(client, logger);
     
@@ -57,11 +65,35 @@ async function initialize() {
     setupCronJobs(client, dataManager, logger);
     
     logger.info('Bot successfully initialized and logged in');
+    logger.info('API server is running and data.json is now accessible to other servers');
   } catch (error) {
     logger.error('Failed to initialize bot:', error);
     process.exit(1);
   }
 }
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  logger.info('Received SIGINT, shutting down gracefully...');
+  
+  if (client.apiServer) {
+    client.apiServer.stop();
+  }
+  
+  client.destroy();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  logger.info('Received SIGTERM, shutting down gracefully...');
+  
+  if (client.apiServer) {
+    client.apiServer.stop();
+  }
+  
+  client.destroy();
+  process.exit(0);
+});
 
 // Start the bot
 initialize();

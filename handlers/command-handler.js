@@ -12,6 +12,7 @@ const { executeVerifyCommand, handleVerifyButton } = require('../commands/verify
 const { executeContributionRequestCommand, handleContributionResponse, processContributionRequest } = require('../commands/contributionrequest');
 const { executeUserTicketsCommand } = require('../commands/usertickets');
 const { execute: executeTicketStatsCommand } = require('../commands/ticketstats');
+const { executeSyncDataCommand } = require('../commands/sync-data');
 const { 
   executeStartQuotaCommand, 
   executeEndQuotaCommand,
@@ -188,6 +189,28 @@ const commands = [
   new SlashCommandBuilder()
     .setName('ticketstats')
     .setDescription('View ticket statistics for different time periods'),
+
+  new SlashCommandBuilder()
+    .setName('syncdata')
+    .setDescription('Sync data from another server\'s API')
+    .addStringOption(option =>
+      option
+        .setName('source_url')
+        .setDescription('The base URL of the source server API (e.g., http://example.com:3000)')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option
+        .setName('data_type')
+        .setDescription('Type of data to sync')
+        .setRequired(true)
+        .addChoices(
+          { name: 'All Data', value: 'all' },
+          { name: 'Staff Statistics', value: 'staff_stats' },
+          { name: 'Quota Data', value: 'quota_data' },
+          { name: 'Contributions', value: 'contributions' }
+        )
+    ),
 ];
 
 
@@ -270,6 +293,9 @@ function setupCommandHandlers(client, logger) {
             break;
           case 'ticketstats':
             await executeTicketStatsCommand(interaction, dataManager, logger);
+            break;
+          case 'syncdata':
+            await executeSyncDataCommand(interaction, dataManager, logger);
             break;
           default:
             await interaction.reply({

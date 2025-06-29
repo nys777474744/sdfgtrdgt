@@ -11,6 +11,10 @@ const config = {
     modLogChannelId: process.env.MOD_LOG_CHANNEL_ID,
     ticketChannelId: process.env.TICKET_CHANNEL_ID
   },
+  api: {
+    port: process.env.API_PORT || 3000,
+    enabled: process.env.ENABLE_API !== 'false' // Default to enabled
+  },
   roles: {
     staff: process.env.STAFF_ROLE_ID,
     admin: process.env.ADMIN_ROLE_ID
